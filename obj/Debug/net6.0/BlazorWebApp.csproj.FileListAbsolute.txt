@@ -397,6 +397,7 @@
 /Users/mike/RiderProjects/AddressBookTechTest/bin/Debug/net6.0/wwwroot/_framework/System.Reflection.TypeExtensions.dll.gz
 /Users/mike/RiderProjects/AddressBookTechTest/bin/Debug/net6.0/wwwroot/_framework/System.Net.WebHeaderCollection.dll.gz
 /Users/mike/RiderProjects/AddressBookTechTest/bin/Debug/net6.0/wwwroot/_framework/System.Resources.Writer.dll.gz
+/Users/mike/RiderProjects/AddressBookTechTest/bin/Debug/net6.0/wwwroot/sample-data/SampleJson.json
 /Users/mike/RiderProjects/AddressBookTechTest/bin/Debug/net6.0/global.json
 /Users/mike/RiderProjects/AddressBookTechTest/bin/Debug/net6.0/BlazorWebApp.staticwebassets.runtime.json
 /Users/mike/RiderProjects/AddressBookTechTest/bin/Debug/net6.0/BlazorWebApp.dll

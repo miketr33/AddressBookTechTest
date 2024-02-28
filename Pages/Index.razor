@@ -1,9 +1,216 @@
 ﻿@page "/"
+@using BlazorWebApp.Models
+@using System.Text.Json
+@inject HttpClient Http
+<PageTitle>Address Book</PageTitle>
+<div class="form-group" id="getAll">
+    <button class="btn-custom" @onclick="GetAllAddressBookItems">Refresh</button>
+</div>
+@if (_addressBookItems == null || _addressBookItems.Length == 0)
+{
+    <p>No Items found.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Phone</th>
+            <th>Email</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in _addressBookItems)
+        {
+            <tr>
+                <td>@item.Id</td>
+                <td>@item.FirstName</td>
+                <td>@item.LastName</td>
+                <td>@item.Phone</td>
+                <td>@item.Email</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+    <p class="text-danger">@_errorMessage</p>
+}
+<hr/>
+<div class="form-group" id="postItem">
+    <textarea class="form-select-sm" @bind="_jsonString" 
+        placeholder='E.G. {"id": "2","first_name": "Jason","last_name": "Grimshaw","phone": "01913478123","email": "jason.grimshaw@corrie.co.uk"}'></textarea>
+    <br/>
+    <button class="btn-custom" @onclick="PostNewAddressBookEntry">Create</button>
+</div>
+<hr/>
+<div class="form-group" id="putItem">
+    <textarea class="form-select-sm" @bind="_replacementJson" 
+        placeholder='E.G. {"id": "2","first_name": "Jason","last_name": "Grimshaw","phone": "01913478123","email": "jason.grimshaw@corrie.co.uk"}'></textarea>
+    <br/>
+    <button class="btn-custom" @onclick="PutAddressBookItem">Update</button>
+</div>
+<hr/>
+<div class="form-group" id="deleteItem">
+    <label for="deleteItem">Enter an Id (int):</label>
+    <input type="text" class="form-text" id="idToDelete" @bind="@_idToDelete" />
+    <p class="text-danger">@_idValidationMessage</p>
+    <button class="btn-custom" @onclick="DeleteAddressBookItem">Delete</button>
+</div>
 
-<PageTitle>Index</PageTitle>
 
-<h1>Hello, world!</h1>
+@code {
+    private AddressBookItem[]? _addressBookItems = {};
+    private string _jsonString = "";
+    private string _idToDelete = "";
+    private bool _idFound;
+    private string? _replacementJson;
+    private string? _idValidationMessage;
+    private string? _errorMessage = "";
 
-Welcome to your new app.
+    protected override async Task OnInitializedAsync()
+    {
+        // Populate with mock data - Until backend hooked up.
+        var url = $"sample-data/SampleJson.json?timestamp={DateTime.Now.Ticks}"; // Ensures sample data not cached.
+        _addressBookItems = await Http.GetFromJsonAsync<AddressBookItem[]>(url);
+        _idValidationMessage = "";
+    }
+    
+    private async Task PostNewAddressBookEntry()
+    {
+        _errorMessage = "";
+        try
+        {
+            var addressBookItemToAdd = ConvertJsonToAddressBookItem(_jsonString);
+            if (int.TryParse(addressBookItemToAdd.Id, out _))
+            {
+                if (_addressBookItems != null)
+                {
+                    if (_addressBookItems.Any(item => item.Id == addressBookItemToAdd.Id))
+                    {
+                        throw new Exception($"Item already exists with Id {addressBookItemToAdd.Id}.");
+                    }
+                }
+                await Http.PostAsJsonAsync("api/AddressBookItems", ConvertJsonToAddressBookItem(_jsonString));
+                await GetAllAddressBookItems(); // Refresh after update.
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Unable to add new entry. {ex.Message}";
+            _jsonString = "";
+        }
+    }
+    
+    private async Task GetAllAddressBookItems()
+    {
+        _errorMessage = "";
+        try
+        {
+            _addressBookItems = await Http.GetFromJsonAsync<AddressBookItem[]>("api/addressBookItems");
+        }
+        catch (Exception)
+        {
+            _errorMessage = "Failed to get all address book items.";
+        }
+    }
+    
+    private async Task PutAddressBookItem()
+    {
+        _errorMessage = "";
+        _idValidationMessage = "";
+        try
+        {
+            var replacementValues = ConvertJsonToAddressBookItem(_replacementJson);
+            if (int.TryParse(replacementValues.Id, out _))
+            {
+                if (_addressBookItems != null)
+                {
+                    if (_addressBookItems.Any(item => item.Id == replacementValues.Id))
+                    {
+                        await Http.PutAsJsonAsync($"api/AddressBookItems/{replacementValues.Id}", replacementValues);
+                        await GetAllAddressBookItems(); // Refresh after update.
+                    }
+                    else
+                    {
+                        _idValidationMessage = $"Id {replacementValues.Id} not found.";
+                    }
+                }
+            }
+            else
+            {
+                _idValidationMessage = $"Id {replacementValues.Id} not valid.";
+            }
+        }
+        catch (Exception)
+        {
+            _errorMessage = "Failed to update address book item.";
+            _replacementJson = "";
+        }
+    }
+    
+    private async Task DeleteAddressBookItem()
+    {
+        _errorMessage = "";
+        _idValidationMessage = "";
+        try
+        {
+            if (int.TryParse(_idToDelete, out var enteredId))
+            {
+                if (_addressBookItems != null)
+                {
+                    _idFound = _addressBookItems.Any(item => item.Id == _idToDelete);
+                }
 
-<SurveyPrompt Title="How is Blazor working for you?"/>
+                if (_idFound)
+                {
+                    await Http.DeleteAsync($"api/AddressBookItems/{enteredId}");
+                    await GetAllAddressBookItems(); // Refresh after delete.
+                }
+                else
+                {
+                    _idValidationMessage = $"Id {_idToDelete} not found. Unable to delete";
+                }
+            }
+            else
+            {
+                _idValidationMessage = ($"Invalid id ({_idToDelete}) entered, please try again.");
+            }
+        }
+        catch (Exception)
+        {
+            _errorMessage = "Failed to delete item.";
+            _idToDelete = "";
+        }
+    }
+    
+    private AddressBookItem ConvertJsonToAddressBookItem(string jsonString)
+    {
+        var jsonData = JsonSerializer.Deserialize<AddressBookItem>(jsonString, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+        if (jsonData != null)
+        {
+            return new AddressBookItem
+            {
+                Id = jsonData.Id ?? GetNextAvailableId(_addressBookItems),
+                FirstName = jsonData.FirstName,
+                LastName = jsonData.LastName,
+                Phone = jsonData.Phone,
+                Email = jsonData.Email
+            };
+        }
+
+        throw new Exception(); // Customise
+    }
+    
+    private static string GetNextAvailableId(AddressBookItem[] addressBook)
+    {
+        if (addressBook.Length == 0) return "1";
+        var maxId = addressBook.Max(item => int.Parse(item.Id));
+        return (maxId + 1).ToString();
+    }
+
+}
