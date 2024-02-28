@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "NXCdhE0XqbLicQRpEfEy5TkvGdbdORgm+O43/jq4i2A=",
+  "Hash": "4UiFMn9Zuh1+Ms4KYfpvpim8XpjBYoFblMJ/eCVMbq0=",
   "Source": "BlazorWebApp",
   "BasePath": "/",
   "Mode": "Root",
@@ -7089,21 +7089,21 @@
       "OriginalItemSpec": "wwwroot/index.html"
     },
     {
-      "Identity": "/Users/mike/RiderProjects/AddressBookTechTest/wwwroot/sample-data/weather.json",
+      "Identity": "/Users/mike/RiderProjects/AddressBookTechTest/wwwroot/sample-data/SampleJson.json",
       "SourceId": "BlazorWebApp",
       "SourceType": "Discovered",
       "ContentRoot": "/Users/mike/RiderProjects/AddressBookTechTest/wwwroot/",
       "BasePath": "/",
-      "RelativePath": "sample-data/weather.json",
+      "RelativePath": "sample-data/SampleJson.json",
       "AssetKind": "All",
       "AssetMode": "All",
       "AssetRole": "Primary",
       "RelatedAsset": "",
       "AssetTraitName": "",
       "AssetTraitValue": "",
-      "CopyToOutputDirectory": "Never",
+      "CopyToOutputDirectory": "PreserveNewest",
       "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot/sample-data/weather.json"
+      "OriginalItemSpec": "wwwroot/sample-data/SampleJson.json"
     }
   ]
 }

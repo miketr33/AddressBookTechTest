@@ -11,4 +11,10 @@
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="6.0.9" PrivateAssets="all"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <Content Update="wwwroot\sample-data\SampleJson.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
 </Project>
