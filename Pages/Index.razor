@@ -39,14 +39,14 @@ else
 }
 <hr/>
 <div class="form-group" id="postItem">
-    <textarea class="form-select-sm" @bind="_jsonString" 
+    <textarea class="form-select-sm" @bind="_jsonToPost" 
         placeholder='E.G. {"id": "2","first_name": "Jason","last_name": "Grimshaw","phone": "01913478123","email": "jason.grimshaw@corrie.co.uk"}'></textarea>
     <br/>
     <button class="btn-custom" @onclick="PostNewAddressBookEntry">Create</button>
 </div>
 <hr/>
 <div class="form-group" id="putItem">
-    <textarea class="form-select-sm" @bind="_replacementJson" 
+    <textarea class="form-select-sm" @bind="_jsonToPut" 
         placeholder='E.G. {"id": "2","first_name": "Jason","last_name": "Grimshaw","phone": "01913478123","email": "jason.grimshaw@corrie.co.uk"}'></textarea>
     <br/>
     <button class="btn-custom" @onclick="PutAddressBookItem">Update</button>
@@ -62,18 +62,16 @@ else
 
 @code {
     private AddressBookItem[]? _addressBookItems = {};
-    private string _jsonString = "";
+    private string _jsonToPost = "";
     private string _idToDelete = "";
     private bool _idFound;
-    private string? _replacementJson;
+    private string _jsonToPut;
     private string? _idValidationMessage;
     private string? _errorMessage = "";
-
+    
     protected override async Task OnInitializedAsync()
     {
-        // Populate with mock data - Until backend hooked up.
-        var url = $"sample-data/SampleJson.json?timestamp={DateTime.Now.Ticks}"; // Ensures sample data not cached.
-        _addressBookItems = await Http.GetFromJsonAsync<AddressBookItem[]>(url);
+        await GetAllAddressBookItems();
         _idValidationMessage = "";
     }
     
@@ -82,7 +80,7 @@ else
         _errorMessage = "";
         try
         {
-            var addressBookItemToAdd = ConvertJsonToAddressBookItem(_jsonString);
+            var addressBookItemToAdd = ConvertJsonToAddressBookItem(_jsonToPost);
             if (int.TryParse(addressBookItemToAdd.Id, out _))
             {
                 if (_addressBookItems != null)
@@ -92,15 +90,16 @@ else
                         throw new Exception($"Item already exists with Id {addressBookItemToAdd.Id}.");
                     }
                 }
-                await Http.PostAsJsonAsync("api/AddressBookItems", ConvertJsonToAddressBookItem(_jsonString));
+                await Http.PostAsJsonAsync("api/AddressBookItems", ConvertJsonToAddressBookItem(_jsonToPost));
                 await GetAllAddressBookItems(); // Refresh after update.
             }
         }
         catch (Exception ex)
         {
             _errorMessage = $"Unable to add new entry. {ex.Message}";
-            _jsonString = "";
         }
+
+        _jsonToPost = "";
     }
     
     private async Task GetAllAddressBookItems()
@@ -108,9 +107,13 @@ else
         _errorMessage = "";
         try
         {
-            _addressBookItems = await Http.GetFromJsonAsync<AddressBookItem[]>("api/addressBookItems");
+            _addressBookItems = await Http.GetFromJsonAsync<AddressBookItem[]>("api/AddressBookItems");
+            if (_addressBookItems == null)
+            {
+                _errorMessage = "Server response: no items found.";
+            }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             _errorMessage = "Failed to get all address book items.";
         }
@@ -122,14 +125,14 @@ else
         _idValidationMessage = "";
         try
         {
-            var replacementValues = ConvertJsonToAddressBookItem(_replacementJson);
+            var replacementValues = ConvertJsonToAddressBookItem(_jsonToPut);
             if (int.TryParse(replacementValues.Id, out _))
             {
                 if (_addressBookItems != null)
                 {
                     if (_addressBookItems.Any(item => item.Id == replacementValues.Id))
                     {
-                        await Http.PutAsJsonAsync($"api/AddressBookItems/{replacementValues.Id}", replacementValues);
+                        await Http.PutAsJsonAsync($"api/AddressBookItems", replacementValues);
                         await GetAllAddressBookItems(); // Refresh after update.
                     }
                     else
@@ -146,8 +149,9 @@ else
         catch (Exception)
         {
             _errorMessage = "Failed to update address book item.";
-            _replacementJson = "";
+            _jsonToPut = "";
         }
+        _jsonToPut = "";
     }
     
     private async Task DeleteAddressBookItem()
@@ -181,8 +185,8 @@ else
         catch (Exception)
         {
             _errorMessage = "Failed to delete item.";
-            _idToDelete = "";
         }
+        _idToDelete = "";
     }
     
     private AddressBookItem ConvertJsonToAddressBookItem(string jsonString)
